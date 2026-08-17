@@ -77,14 +77,25 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import MonacoEditor from './components/MonacoEditor.vue'
 import { generateMigrationScript, normalizeConfig } from './lib/scriptGenerator'
-import { deleteProfile, getProfileNames, loadState, saveState, upsertProfile } from './lib/storage'
+import {
+	deleteProfile,
+	deleteProfileScript,
+	getDefaultState,
+	getProfileNames,
+	loadProfileScript,
+	loadState,
+	migrateLegacyScripts,
+	saveProfileScript,
+	saveState,
+	upsertProfile
+} from './lib/storage'
 
-const state = ref(loadState())
+const state = ref(getDefaultState())
 const activeTab = ref('config')
-const selectedProfileName = ref(state.value.activeProfileName || '')
+const selectedProfileName = ref('')
 const profileNameInput = ref(selectedProfileName.value)
 
 const config = reactive({
@@ -95,12 +106,21 @@ const config = reactive({
 })
 
 const currentScript = ref(generateMigrationScript(config))
+const isStorageReady = ref(false)
 
 const profileNames = computed(() => getProfileNames(state.value))
 
-if (selectedProfileName.value && state.value.profiles[selectedProfileName.value]) {
-	applyProfile(state.value.profiles[selectedProfileName.value])
-}
+onMounted(async () => {
+	state.value = loadState()
+	state.value = await migrateLegacyScripts()
+	selectedProfileName.value = state.value.activeProfileName || ''
+	profileNameInput.value = selectedProfileName.value
+	isStorageReady.value = true
+
+	if (selectedProfileName.value && state.value.profiles[selectedProfileName.value]) {
+		await applyProfile(state.value.profiles[selectedProfileName.value], selectedProfileName.value)
+	}
+})
 
 function tabClass(tabName) {
 	return {
@@ -109,22 +129,23 @@ function tabClass(tabName) {
 	}
 }
 
-function applyProfile(profile) {
+async function applyProfile(profile, profileName = profile.name) {
 	const profileConfig = normalizeConfig(profile.config)
+	const savedScript = await loadProfileScript(profileName)
 
 	config.SourceDB = profileConfig.SourceDB
 	config.TargetDB = profileConfig.TargetDB
 	config.WorkflowType = profileConfig.WorkflowType
 	config.ProcessID = profileConfig.ProcessID
 
-	currentScript.value = profile.script || generateMigrationScript(profileConfig)
+	currentScript.value = savedScript || generateMigrationScript(profileConfig)
 }
 
 function generateFromConfig() {
 	currentScript.value = generateMigrationScript(config)
 }
 
-function saveCurrentProfile() {
+async function saveCurrentProfile() {
 	const name = profileNameInput.value.trim()
 
 	if (!name) {
@@ -135,14 +156,15 @@ function saveCurrentProfile() {
 	const normalized = normalizeConfig(config)
 	const script = currentScript.value || generateMigrationScript(normalized)
 
-	state.value = upsertProfile(state.value, name, normalized, script)
+	state.value = upsertProfile(state.value, name, normalized)
 	saveState(state.value)
+	await saveProfileScript(name, script)
 
 	selectedProfileName.value = name
 	profileNameInput.value = name
 }
 
-function loadSelectedProfile() {
+async function loadSelectedProfile() {
 	if (!selectedProfileName.value) {
 		return
 	}
@@ -155,7 +177,7 @@ function loadSelectedProfile() {
 	}
 
 	profileNameInput.value = selectedProfileName.value
-	applyProfile(profile)
+	await applyProfile(profile, selectedProfileName.value)
 }
 
 function createNewDraft() {
@@ -170,7 +192,7 @@ function createNewDraft() {
 	currentScript.value = generateMigrationScript(config)
 }
 
-function removeSelectedProfile() {
+async function removeSelectedProfile() {
 	if (!selectedProfileName.value) {
 		return
 	}
@@ -179,6 +201,7 @@ function removeSelectedProfile() {
 
 	state.value = deleteProfile(state.value, name)
 	saveState(state.value)
+	await deleteProfileScript(name)
 
 	createNewDraft()
 }

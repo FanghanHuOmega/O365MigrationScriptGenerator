@@ -13,13 +13,14 @@ Vue 3 + Vite single-file component project for creating and managing Omega 365 m
 	- Migration Script tab powered by Monaco Editor (SQL editing).
 - Profile system with custom profile names.
 - Per-profile migration script storage (editable manually in Monaco).
-- Local persistence in browser localStorage as JSON.
+- Profile metadata persisted in localStorage as JSON.
+- Script bodies persisted in IndexedDB to avoid localStorage size limits.
 
 ## Tech Stack
 
 - Vue 3 (SFC)
 - Vite
-- Monaco Editor (@monaco-editor/loader + monaco-editor)
+- Monaco Editor (monaco-editor)
 
 ## Project Structure
 
@@ -34,8 +35,8 @@ Vue 3 + Vite single-file component project for creating and managing Omega 365 m
 |   |-- components
 |   |   `-- MonacoEditor.vue
 |   `-- lib
-|       |-- scriptGenerator.js
-|       `-- storage.js
+|       |-- scriptGenerator.ts
+|       `-- storage.ts
 `-- vite.config.js
 ```
 
@@ -74,10 +75,12 @@ npm run preview
 - Profiles are stored under one localStorage key with JSON containing:
 	- activeProfileName
 	- profiles[profileName].config
-	- profiles[profileName].script
 	- profiles[profileName].updatedAt
+- Profile scripts are stored separately in IndexedDB under the same browser profile.
 
 ## Notes
 
 - All data is browser-local only (no backend).
-- Clearing localStorage or switching browser context removes saved data.
+- Clearing localStorage removes profile metadata.
+- Clearing IndexedDB removes saved script bodies.
+- Existing localStorage-based scripts are migrated to IndexedDB automatically on first load.
