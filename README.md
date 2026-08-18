@@ -1,86 +1,30 @@
 # O365 Migration Script Generator
 
-Vue 3 + Vite single-file component project for creating and managing Omega 365 migration scripts.
+This is a standalone web app for generating migration scripts to migrate data between Pims R4 and Omega 365.
 
-## Features
+This app will generate SQL scripts based on a migration profile the user provides. profiles and scripts generated is saved locally on the user's browser. user can modify the generated script and save it. Once satisfied with the scirpt, the user can copy the script and execute it in SSMS or other sql clients. While this app is capable of storing scripts, it is still recommended to keep your generated scripts in a separate repository for sharing and version tracking.
 
-- Two-tab UI:
-	- Config tab with initial fields:
-		- SourceDB (string)
-		- TargetDB (string)
-		- WorkflowType (string)
-		- ProcessID (number)
-	- Migration Script tab powered by Monaco Editor (SQL editing).
-- Profile system with custom profile names.
-- Per-profile migration script storage (editable manually in Monaco).
-- Profile metadata persisted in localStorage as JSON.
-- Script bodies persisted in IndexedDB to avoid localStorage size limits.
-
-## Tech Stack
-
-- Vue 3 (SFC)
-- Vite
-- Monaco Editor (monaco-editor)
-
-## Project Structure
-
-```text
-.
-|-- index.html
-|-- package.json
-|-- src
-|   |-- App.vue
-|   |-- main.js
-|   |-- style.css
-|   |-- components
-|   |   `-- MonacoEditor.vue
-|   `-- lib
-|       |-- scriptGenerator.ts
-|       `-- storage.ts
-`-- vite.config.js
-```
+Compare to dynamic sql queries, this tool is easier to modify, the generated script is easier to debug.
 
 ## Getting Started
 
-### 1) Install dependencies
+### For Users:
+The project is hosted on Github pages:
 
+
+### For Devs:
+**Make sure you use branches and pull requests, do not commit directly to the main branch.**
+
+You need to install dependencies if it is the first time you are setting up the project.
 ```bash
 npm install
 ```
 
-### 2) Run development server
-
+Start the dev server with the following command
 ```bash
 npm run dev
 ```
 
-### 3) Build for production
+A recommended vscode extention to use for this project is: qufiwefefwoyn.inline-sql-syntax
 
-```bash
-npm run build
-```
-
-### 4) Preview production build
-
-```bash
-npm run preview
-```
-
-## How It Works
-
-- Use the Config tab to enter migration metadata.
-- Click Generate Script to create a baseline SQL script.
-- Open Migration Script tab to review/edit script contents in Monaco.
-- Enter a custom profile name and click Save Profile.
-- Profiles are stored under one localStorage key with JSON containing:
-	- activeProfileName
-	- profiles[profileName].config
-	- profiles[profileName].updatedAt
-- Profile scripts are stored separately in IndexedDB under the same browser profile.
-
-## Notes
-
-- All data is browser-local only (no backend).
-- Clearing localStorage removes profile metadata.
-- Clearing IndexedDB removes saved script bodies.
-- Existing localStorage-based scripts are migrated to IndexedDB automatically on first load.
+To publish your changes, test your changes first then initiate a pull request. the changes will be automatically deployed to Github Pages once the pull request is merged.
