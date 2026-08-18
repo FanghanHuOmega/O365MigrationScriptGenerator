@@ -80,20 +80,9 @@
 import { computed, onMounted, reactive, ref } from 'vue'
 import MonacoEditor from './components/MonacoEditor.vue'
 import { generateMigrationScript, normalizeConfig } from './lib/scriptGenerator'
-import {
-	deleteProfile,
-	deleteProfileScript,
-	getDefaultState,
-	getProfileNames,
-	loadProfileScript,
-	loadState,
-	migrateLegacyScripts,
-	saveProfileScript,
-	saveState,
-	upsertProfile
-} from './lib/storage'
+import profileManager from './lib/profileManager'
 
-const state = ref(getDefaultState())
+const profiles = ref([])
 const activeTab = ref('config')
 const selectedProfileName = ref('')
 const profileNameInput = ref(selectedProfileName.value)
@@ -106,20 +95,12 @@ const config = reactive({
 })
 
 const currentScript = ref(generateMigrationScript(config))
-const isStorageReady = ref(false)
+const scriptName = 'migration.sql'
 
-const profileNames = computed(() => getProfileNames(state.value))
+const profileNames = computed(() => profiles.value.map((profile) => profile.name).sort((a, b) => a.localeCompare(b)))
 
 onMounted(async () => {
-	state.value = loadState()
-	state.value = await migrateLegacyScripts()
-	selectedProfileName.value = state.value.activeProfileName || ''
-	profileNameInput.value = selectedProfileName.value
-	isStorageReady.value = true
-
-	if (selectedProfileName.value && state.value.profiles[selectedProfileName.value]) {
-		await applyProfile(state.value.profiles[selectedProfileName.value], selectedProfileName.value)
-	}
+	profiles.value = await profileManager.getProfiles()
 })
 
 function tabClass(tabName) {
@@ -131,14 +112,14 @@ function tabClass(tabName) {
 
 async function applyProfile(profile, profileName = profile.name) {
 	const profileConfig = normalizeConfig(profile.config)
-	const savedScript = await loadProfileScript(profileName)
+	const savedScript = await profileManager.getProfileScript(profileName, scriptName)
 
 	config.SourceDB = profileConfig.SourceDB
 	config.TargetDB = profileConfig.TargetDB
 	config.WorkflowType = profileConfig.WorkflowType
 	config.ProcessID = profileConfig.ProcessID
 
-	currentScript.value = savedScript || generateMigrationScript(profileConfig)
+	currentScript.value = savedScript?.script || generateMigrationScript(profileConfig)
 }
 
 function generateFromConfig() {
@@ -156,9 +137,9 @@ async function saveCurrentProfile() {
 	const normalized = normalizeConfig(config)
 	const script = currentScript.value || generateMigrationScript(normalized)
 
-	state.value = upsertProfile(state.value, name, normalized)
-	saveState(state.value)
-	await saveProfileScript(name, script)
+	await profileManager.saveProfile({ name, config: normalized })
+	await profileManager.saveProfileScript({ profileName: name, scriptName, script })
+	profiles.value = await profileManager.getProfiles()
 
 	selectedProfileName.value = name
 	profileNameInput.value = name
@@ -169,10 +150,10 @@ async function loadSelectedProfile() {
 		return
 	}
 
-	const profile = state.value.profiles[selectedProfileName.value]
+	const profile = profiles.value.find(({ name }) => name === selectedProfileName.value)
 
 	if (!profile) {
-		window.alert('Selected profile could not be found in local storage.')
+		window.alert('Selected profile could not be found.')
 		return
 	}
 
@@ -199,9 +180,9 @@ async function removeSelectedProfile() {
 
 	const name = selectedProfileName.value
 
-	state.value = deleteProfile(state.value, name)
-	saveState(state.value)
-	await deleteProfileScript(name)
+	await profileManager.deleteProfile(name)
+	await profileManager.deleteProfileScripts(name)
+	profiles.value = await profileManager.getProfiles()
 
 	createNewDraft()
 }
