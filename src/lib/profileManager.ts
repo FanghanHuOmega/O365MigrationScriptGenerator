@@ -5,7 +5,7 @@ const PROFILE_SCRIPTS_STORE_NAME = 'profileScripts';
 
 export interface MigrationProfile {
     name: string,
-    config: MigrationConfig
+    config: WorkflowMigrationConfig
 }
 
 export interface MigrationConfig {
@@ -27,11 +27,15 @@ export interface WorkflowMigrationConfig extends MigrationConfig {
      * Omega 365 process ID of the scope item to migrate data to
      */
     processID: number,
+    /**
+     * R4 workflow base table name
+     */
+    baseTable:string,
 
     /**
-     * The R4 workflow type revision this config is applicable to, leave undefined if it applies to all revisions
+     * The R4 workflow type revision this config is applicable to, leave empty if it applies to all revisions
      */
-    applicableRevisions?: number[],
+    applicableRevisions: number[],
 
     stepsMapping: WorkflowStepsMapping[],
     rolesMapping: WorkflowRoleMapping[],
