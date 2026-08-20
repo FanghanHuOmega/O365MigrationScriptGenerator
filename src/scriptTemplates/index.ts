@@ -1,6 +1,7 @@
 import { MigrationProfile, MigrationScript } from "../lib/profileManager";
 import profileManager from "../lib/profileManager";
 import personsScriptGenerator from "./persons";
+import filesScriptGenerator from "./files";
 
 export interface ScriptGenerator {
     scriptName: string,
@@ -8,7 +9,8 @@ export interface ScriptGenerator {
 }
 
 export const scriptGenerators: ScriptGenerator[] = [
-    personsScriptGenerator
+    personsScriptGenerator,
+    filesScriptGenerator
 ]
 
 /**

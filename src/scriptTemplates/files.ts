@@ -1,7 +1,7 @@
 import { MigrationProfile, WorkflowMigrationConfig, MigrationScript } from "../lib/profileManager";
 import { ScriptGenerator } from "./index";
 
-export const SCRIPT_NAME = "persons.sql";
+export const SCRIPT_NAME = "files.sql";
 
 const generator: ScriptGenerator = {
     scriptName: SCRIPT_NAME,
@@ -11,7 +11,7 @@ const generator: ScriptGenerator = {
 
         let script = 
 `--sql
--- General Person Migration Script for ${migrationProfile.name}
+-- General Files Migration Script for ${migrationProfile.name}
 -- Generated on ${new Date().toISOString()}
 SELECT TOP 100 * FROM ${sourceDB}.dbo.${baseTable} AS BT
 WHERE BT.WorkflowType = '${workflowType}';

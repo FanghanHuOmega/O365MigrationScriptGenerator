@@ -1,7 +1,7 @@
 <template>
 	<main class="container p-1">
 		<div class="card" style="margin-top: 20px; padding: 20px; min-height: 200px;">
-			<ul class="nav nav-tabs">
+			<ul class="nav nav-tabs mb-1">
 				<li class="nav-item">
 					<a class="nav-link active" data-bs-target="#migration-profile" data-bs-toggle="tab" role="tab" href="#">Migration Profile</a>
 				</li>
@@ -11,11 +11,10 @@
 			</ul>
 			<div class="tab-content">
 				<div class="tab-pane fade show active" id="migration-profile" role="tabpanel">
-					<ProfileConfigTab />
+					<ProfileConfigTab @profile-changed="currentProfile = $event" @scripts-generated="scriptsRefreshTrigger++" />
 				</div>
 				<div class="tab-pane fade" id="scripts" role="tabpanel">
-					<!-- Scripts Content Here -->
-					Scripts Content Here
+					<ScriptsTab :profile="currentProfile" :refresh-trigger="scriptsRefreshTrigger" />
 				</div>
 			</div>
 		</div>
@@ -23,7 +22,12 @@
 </template>
 
 <script setup>
+	import { ref } from 'vue'
 	import ProfileConfigTab from './components/ProfileConfigTab.vue'
+	import ScriptsTab from './components/ScriptsTab.vue'
+
+	const currentProfile = ref(null)
+	const scriptsRefreshTrigger = ref(0)
 </script>
 
 <style>

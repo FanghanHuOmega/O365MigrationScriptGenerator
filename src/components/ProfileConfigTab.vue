@@ -151,6 +151,11 @@ const config: Ref<WorkflowMigrationConfig> = ref(createDefaultConfig());
 const profile = computed(() => ({ name: selectedProfileName.value, config: toRaw(config.value) }));
 const showSavedToast = ref(false)
 
+const emit = defineEmits<{
+	'profile-changed': [profile: MigrationProfile]
+	'scripts-generated': []
+}>()
+
 type DialogRef = { modal: { show: () => void } }
 const renameProfileDialog = ref<DialogRef | null>(null)
 const newProfileDialog = ref<DialogRef | null>(null)
@@ -175,11 +180,13 @@ async function loadFirstProfileOrCreateDefault() {
 		selectedProfileName.value = DEFAULT_PROFILE_NAME
 		await profileManager.saveProfile({ name: DEFAULT_PROFILE_NAME, config: createDefaultConfig() })
 		profileList.value = await profileManager.getProfiles();
+		emit('profile-changed', profile.value)
 	}
 }
 
 async function switchProfile() {
 	config.value = (await profileManager.getProfile(selectedProfileName.value))?.config ?? createDefaultConfig();
+	emit('profile-changed', profile.value)
 }
 
 /**
@@ -212,6 +219,7 @@ async function createNewProfile(values: any) {
 		config.value = createDefaultConfig();
 		await saveProfile();
 		profileList.value = await profileManager.getProfiles();
+		emit('profile-changed', profile.value)
 	}
 }
 
@@ -232,6 +240,7 @@ async function renameProfile(values: any) {
 		selectedProfileName.value = newName;
 		await saveProfile();
 		profileList.value = await profileManager.getProfiles();
+		emit('profile-changed', profile.value)
 	}
 }
 
@@ -247,6 +256,13 @@ async function deleteProfile() {
 async function generateScripts() {
 	await generateMissingScripts(profile.value);
 	await saveProfile();
+	emit('scripts-generated')
+	
+	//switch to the scripts tab after generating scripts
+	const scriptsTab = document.querySelector('[data-bs-target="#scripts"]');
+	if (scriptsTab instanceof HTMLElement) {
+		scriptsTab.click();
+	}
 }
 
 function addRevisionValue(values: any) {
