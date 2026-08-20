@@ -50,7 +50,7 @@ export interface WorkflowStepsMapping {
 
 export interface WorkflowRoleMapping {
     r4RoleCode: string,
-    o365RoleID: number,
+    o365RoleID: string,
 }
 
 export interface WorkflowSignatureMapping {
